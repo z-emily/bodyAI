@@ -7,6 +7,8 @@ import * as poseDetection from '@tensorflow-models/pose-detection';
 import '@tensorflow/tfjs-backend-webgl';
 import { drawCanvas } from '../modules/draw_utils';
 
+// editing
+
 const WebcamComponent = () => {
   const webcamRef = useRef<any>(null);
   const canvasRef = useRef<any>(null);
