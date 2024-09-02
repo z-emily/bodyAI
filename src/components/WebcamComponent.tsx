@@ -10,12 +10,11 @@ import { drawCanvas } from '../modules/draw_utils';
 const WebcamComponent = () => {
   const webcamRef = useRef<any>(null);
   const canvasRef = useRef<any>(null);
-  const [goodPostureBaseLine, setGoodPostureBaseLine] = useState<number>(200);
   const [eyeHeight, setEyeHeight] = useState<number | null>(null);
+  const goodPostureBaseLineRef = useRef<number>(200);
 
   const runPoseDetection = async () => {
     await tf.ready();
-
     await tf.setBackend('webgl');
 
     const detectorConfig = { modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER };
@@ -33,7 +32,7 @@ const WebcamComponent = () => {
         const poses = await detector.estimatePoses(video);
 
         if (poses.length > 0) {
-          drawCanvas(poses, video, videoWidth, videoHeight, canvasRef, goodPostureBaseLine ?? 0);
+          drawCanvas(poses, video, videoWidth, videoHeight, canvasRef, goodPostureBaseLineRef.current);
 
           // Extract the eye height from the detected poses
           const pose = poses[0].keypoints;
@@ -41,7 +40,7 @@ const WebcamComponent = () => {
           const rightEye = pose.find(point => point.name === 'right_eye');
 
           if (leftEye && rightEye) {
-            const eyeHeight = (leftEye.y + rightEye.y)/2;
+            const eyeHeight = (leftEye.y + rightEye.y) / 2;
             setEyeHeight(eyeHeight);
           }
         }
@@ -58,11 +57,9 @@ const WebcamComponent = () => {
   }, []);
 
   const handleResetBaseline = () => {
-    console.log("In reset")
     if (eyeHeight !== null) {
-      console.log("set eyeheight")
-      setGoodPostureBaseLine(eyeHeight);
-      console.log(goodPostureBaseLine)
+      goodPostureBaseLineRef.current = eyeHeight;
+      console.log("New baseline set:", goodPostureBaseLineRef.current);
     }
   };
 
