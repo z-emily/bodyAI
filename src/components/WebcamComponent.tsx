@@ -11,7 +11,8 @@ const WebcamComponent = () => {
   const webcamRef = useRef<any>(null);
   const canvasRef = useRef<any>(null);
   const [eyeHeight, setEyeHeight] = useState<number | null>(null);
-  const goodPostureBaseLineRef = useRef<number>(200);
+  const goodPostureBaseLineRef = useRef<number | null>(null);
+  const baselineSetRef = useRef<boolean>(false); // Track if the baseline is already set
 
   const runPoseDetection = async () => {
     await tf.ready();
@@ -42,6 +43,13 @@ const WebcamComponent = () => {
           if (leftEye && rightEye) {
             const eyeHeight = (leftEye.y + rightEye.y) / 2;
             setEyeHeight(eyeHeight);
+
+            // Automatically set the baseline if it hasn't been set yet
+            if (!baselineSetRef.current) {
+              goodPostureBaseLineRef.current = eyeHeight;
+              baselineSetRef.current = true; // Mark that the baseline has been set
+              console.log("Baseline automatically set to:", goodPostureBaseLineRef.current);
+            }
           }
         }
       }
