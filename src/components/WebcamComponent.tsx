@@ -11,6 +11,7 @@ const WebcamComponent = () => {
   const webcamRef = useRef<any>(null);
   const canvasRef = useRef<any>(null);
   const [goodPostureBaseLine, setGoodPostureBaseLine] = useState<number>(200);
+  const [eyeHeight, setEyeHeight] = useState<number | null>(null);
 
   const runPoseDetection = async () => {
     await tf.ready();
@@ -33,6 +34,16 @@ const WebcamComponent = () => {
 
         if (poses.length > 0) {
           drawCanvas(poses, video, videoWidth, videoHeight, canvasRef, goodPostureBaseLine ?? 0);
+
+          // Extract the eye height from the detected poses
+          const pose = poses[0].keypoints;
+          const leftEye = pose.find(point => point.name === 'left_eye');
+          const rightEye = pose.find(point => point.name === 'right_eye');
+
+          if (leftEye && rightEye) {
+            const eyeHeight = (leftEye.y + rightEye.y)/2;
+            setEyeHeight(eyeHeight);
+          }
         }
       }
 
@@ -46,10 +57,22 @@ const WebcamComponent = () => {
     runPoseDetection();
   }, []);
 
+  const handleResetBaseline = () => {
+    console.log("In reset")
+    if (eyeHeight !== null) {
+      console.log("set eyeheight")
+      setGoodPostureBaseLine(eyeHeight);
+      console.log(goodPostureBaseLine)
+    }
+  };
+
   return (
     <div>
       <Webcam ref={webcamRef} style={{ display: 'block' }} />
       <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0 }} />
+      <button onClick={handleResetBaseline}>
+        Set Posture Baseline
+      </button>
     </div>
   );
 };

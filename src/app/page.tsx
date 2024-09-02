@@ -5,8 +5,7 @@ const WebcamComponent = dynamic(() => import('../components/WebcamComponent'), {
 
 const Home: React.FC = () => {
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Live Webcam Stream</h1>
+    <div style={{ padding: '0px' }}>
       <WebcamComponent />
     </div>
   );
