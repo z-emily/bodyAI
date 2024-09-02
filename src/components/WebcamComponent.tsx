@@ -10,11 +10,12 @@ import { drawCanvas } from '../modules/draw_utils';
 const WebcamComponent = () => {
   const webcamRef = useRef<any>(null);
   const canvasRef = useRef<any>(null);
-  const [goodPostureBaseLine, setGoodPostureBaseLine] = useState<number>(0);
+  const [goodPostureBaseLine, setGoodPostureBaseLine] = useState<number>(200);
 
   const runPoseDetection = async () => {
-    // Wait for the backend to be ready
     await tf.ready();
+
+    await tf.setBackend('webgl');
 
     const detectorConfig = { modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER };
     const detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, detectorConfig);
