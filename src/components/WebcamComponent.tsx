@@ -41,8 +41,7 @@ const WebcamComponent = () => {
 
         if (poses.length > 0) {
           drawCanvas(
-            poses, 
-            video, 
+            poses,
             videoWidth, 
             videoHeight, 
             canvasRef, 

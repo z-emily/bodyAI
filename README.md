@@ -3,7 +3,7 @@
 
 ## Overview
 
-**BodyAI** is a lightweight, ultra-simple web application designed to run alongside online interviews or large applications. It leverages TensorFlow.js and the MoveNet pose detection model to provide real-time feedback on posture and eye distance. The project is intentionally bare to ensure minimal resource usage and optimal performance during live interactions.
+**BodyAI** is an ultri-lightweight web application designed to run alongside online interviews or large applications. It leverages TensorFlow.js and the MoveNet pose detection model to provide real-time feedback on posture and eye distance. The project is intentionally bare to ensure minimal resource usage and optimal performance during live interactions.
 
 ## Features
 
