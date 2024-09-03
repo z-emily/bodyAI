@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
-## Getting Started
+# BodyAI
 
-First, run the development server:
+## Overview
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+**BodyAI** is a lightweight, ultra-simple web application designed to run alongside online interviews. It leverages TensorFlow.js and the MoveNet pose detection model to provide real-time feedback on posture and eye distance. The project is intentionally bare to ensure minimal resource usage and optimal performance during live interactions.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Real-time Pose Detection:** Utilizes TensorFlow.js and the MoveNet model to detect and analyze human poses.
+- **Eye Height Monitoring:** Tracks the height of the eyes and compares it to a baseline to ensure correct posture.
+- **Eye Distance Measurement:** Measures the distance between the eyes and alerts if it exceeds a specified threshold.
+- **Shoulder Height Tracking:** Monitors shoulder height and compares it to a baseline to provide feedback on shoulder posture.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+## Notes
 
-## Learn More
+- This project is designed to be ultra-lightweight and minimal to run efficiently alongside an online interview or any real-time application.
+- The simplicity of the design ensures that it does not consume excessive resources, making it ideal for live use.
 
-To learn more about Next.js, take a look at the following resources:
+## Installation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Clone the repository:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+    ```bash
+    git clone git@github.com:z-emily/bodyAI.git
+    ```
 
-## Deploy on Vercel
+2. Navigate to the project directory:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+    ```bash
+    cd bodyAI
+    ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+3. Install the required dependencies:
+
+    ```bash
+    npm install
+    ```
+
+## Usage
+
+1. Start the development server:
+
+    ```bash
+    npm run dev
+    ```
+
+2. Open your browser and navigate to `http://localhost:3000` to view the application.
+
+3. Position your webcam to capture yourself, and the application will start detecting and analyzing your posture.
+
+4. Click the **Set Posture Baseline** button to establish a baseline for eye height, eye distance, and shoulder height.
