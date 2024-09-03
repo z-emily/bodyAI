@@ -103,9 +103,11 @@ const WebcamComponent = () => {
     <div>
       <Webcam ref={webcamRef} style={{ display: 'block' }} />
       <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0 }} />
-      <button onClick={handleResetBaseline}>
-        Set Posture Baseline
-      </button>
+      <button onClick={handleResetBaseline}
+      className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200">
+      Set Posture Baseline
+    </button>
+
     </div>
   );
 };
