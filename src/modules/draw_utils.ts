@@ -10,28 +10,31 @@ import * as poseDetection from '@tensorflow-models/pose-detection';
  * @param {(int)} video height
  * @param {(obj)} canvas object
  * @returns void
- * @memberof Options
  */
 export const drawCanvas = (
-  poses: { keypoints: any }[],
-  video: any,
-  videoWidth: any,
-  videoHeight: any,
-  canvas: any,
-  goodPostureBaseLine: any
-) => {
-  if (canvas.current == null) return;
-  const ctx = canvas.current.getContext('2d');
-
-  canvas.current.width = videoWidth;
-  canvas.current.height = videoHeight;
-
-  if (poses[0].keypoints != null) {
-    drawKeypoints(poses[0].keypoints, ctx, goodPostureBaseLine);
-    drawGoodPostureHeight(poses[0].keypoints, ctx, goodPostureBaseLine);
-    // drawSkeleton(poses[0].keypoints, poses[0].id, ctx);
-  }
-};
+    poses: { keypoints: any }[],
+    video: any,
+    videoWidth: any,
+    videoHeight: any,
+    canvas: any,
+    goodPostureBaseLine: any,
+    baselineEyeDistance: any,
+    baselineShoulderHeight: any,
+  ) => {
+    if (canvas.current == null) return;
+    const ctx = canvas.current.getContext('2d');
+  
+    canvas.current.width = videoWidth;
+    canvas.current.height = videoHeight;
+  
+    if (poses[0].keypoints != null) {
+      drawKeypoints(poses[0].keypoints, ctx, goodPostureBaseLine);
+      drawGoodPostureHeight(poses[0].keypoints, ctx, goodPostureBaseLine);
+      drawShoulderShrug(poses[0].keypoints, ctx, baselineShoulderHeight);
+      drawEyeDistance(poses[0].keypoints, ctx, baselineEyeDistance);
+    }
+  };
+  
 
 /**
  * Draw the keypoints on the video.
@@ -54,7 +57,7 @@ export function drawKeypoints(
 
   ctx.fillStyle = 'rgba(0, 255, 0, 0.9)'; // green if delta is positive
   if (delta > 25 || delta < -25) {
-    ctx.fillStyle = 'rgba(255, 0, 0, 0.9)'; // TODO: make this a configurable parameter to match the GOOD_POSTURE_DEVIATION val
+    ctx.fillStyle = 'rgba(255, 0, 0, 0.9)';
   }
 
   for (const i of keypointInd.middle) {
@@ -82,39 +85,7 @@ function drawKeypoint(keypoint: any, ctx: any) {
     circle.arc(keypoint.x, keypoint.y, 4, 0, 2 * Math.PI);
 
     ctx.fill(circle);
-    // ctx.stroke(circle);
   }
-}
-
-/**
- * Draw the skeleton of a body on the video.
- * @param keypoints A list of keypoints.
- */
-export function drawSkeleton(keypoints: any, poseId: any, ctx: any) {
-  // Each poseId is mapped to a color in the color palette.
-  const color = 'White';
-  ctx.fillStyle = color;
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 4;
-
-  poseDetection.util
-    .getAdjacentPairs(poseDetection.SupportedModels.MoveNet)
-    .forEach(([i, j]) => {
-      const kp1 = keypoints[i];
-      const kp2 = keypoints[j];
-
-      // If score is null, just show the keypoint.
-      const score1 = kp1.score != null ? kp1.score : 1;
-      const score2 = kp2.score != null ? kp2.score : 1;
-      const scoreThreshold = 0.3 || 0;
-
-      if (score1 >= scoreThreshold && score2 >= scoreThreshold) {
-        ctx.beginPath();
-        ctx.moveTo(kp1.x, kp1.y);
-        ctx.lineTo(kp2.x, kp2.y);
-        ctx.stroke();
-      }
-    });
 }
 
 /**
@@ -140,10 +111,6 @@ export function drawGoodPostureHeight(
   ctx.lineTo(600, currentGoodPostureHeight);
   ctx.stroke();
 
-  // show current posture height
-  // ctx.strokeStyle = "White";
-  // ctx.lineWidth = 2;
-
   ctx.beginPath(); // Start a new path
   ctx.moveTo(0, currentPostureHeight); // Move the pen to (30, 50)
   ctx.lineTo(800, currentPostureHeight); // Draw a line to (150, 100)
@@ -152,8 +119,89 @@ export function drawGoodPostureHeight(
   // draw difference between current posture height and good posture height
   ctx.fillStyle = 'rgba(0, 255, 0, 0.5)'; // green if delta is positive
   if (delta > 25 || delta < -25) {
-    ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'; // TODO: make this a configurable parameter to match the GOOD_POSTURE_DEVIATION val
+    ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
   }
 
   ctx.fillRect(0, currentGoodPostureHeight, 800, delta);
 }
+
+/**
+ * Draw the difference in shoulder height to detect shoulder shrugging.
+ * @param keypoints A list of keypoints.
+ * @param ctx current context of the canvas.
+ * @param baselineShoulderHeight Difference in shoulder height considered as baseline.
+ */
+export function drawShoulderShrug(
+    keypoints: any,
+    ctx: any,
+    baselineShoulderHeight: number
+  ) {
+    const leftShoulderHeight = keypoints[5].y;
+    const rightShoulderHeight = keypoints[6].y;
+    const deltaShoulderHeight = Math.abs(leftShoulderHeight - rightShoulderHeight);
+  
+    // Draw line between shoulders
+    ctx.strokeStyle = '#00f'; // blue
+    ctx.lineWidth = 2;
+  
+    ctx.beginPath();
+    ctx.moveTo(keypoints[5].x, leftShoulderHeight);
+    ctx.lineTo(keypoints[6].x, rightShoulderHeight);
+    ctx.stroke();
+  
+    // Draw difference between shoulder heights
+    ctx.fillStyle = 'rgba(0, 255, 0, 0.5)'; // green if within baseline
+    if (deltaShoulderHeight > baselineShoulderHeight) {
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'; // red if exceeds baseline
+    }
+  
+    ctx.fillRect(
+      0,
+      Math.min(leftShoulderHeight, rightShoulderHeight),
+      800,
+      deltaShoulderHeight
+    );
+  }
+
+  
+  /**
+ * Draw the difference in eye distance to detect if the face is too close to the screen.
+ * @param keypoints A list of keypoints.
+ * @param ctx current context of the canvas.
+ * @param baselineEyeDistance Baseline distance between eyes.
+ */
+export function drawEyeDistance(
+    keypoints: any,
+    ctx: any,
+    baselineEyeDistance: number
+  ) {
+    const leftEye = keypoints[1];
+    const rightEye = keypoints[2];
+    const currentEyeDistance = Math.hypot(
+      rightEye.x - leftEye.x,
+      rightEye.y - leftEye.y
+    );
+    const deltaEyeDistance = currentEyeDistance - baselineEyeDistance;
+  
+    // Draw line between eyes
+    ctx.strokeStyle = '#ff0'; // yellow
+    ctx.lineWidth = 2;
+  
+    ctx.beginPath();
+    ctx.moveTo(leftEye.x, leftEye.y);
+    ctx.lineTo(rightEye.x, rightEye.y);
+    ctx.stroke();
+  
+    // Draw eye distance difference
+    ctx.fillStyle = 'rgba(0, 255, 0, 0.5)'; // green if within baseline
+    if (Math.abs(deltaEyeDistance) > baselineEyeDistance * 0.2) { // 20% threshold
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'; // red if exceeds threshold
+    }
+  
+    ctx.fillRect(
+      0,
+      Math.min(leftEye.y, rightEye.y),
+      800,
+      Math.abs(deltaEyeDistance)
+    );
+  }  
