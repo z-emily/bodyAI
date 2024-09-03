@@ -38,7 +38,6 @@ const WebcamComponent = () => {
         webcamRef.current.video.height = videoHeight;
 
         const poses = await detector.estimatePoses(video);
-        console.log(poses);
 
         if (poses.length > 0) {
           drawCanvas(
@@ -73,7 +72,7 @@ const WebcamComponent = () => {
             if (!baselineSetRef.current) {
               eyeHeightBaselineRef.current = eyeHeight;
               eyeDistanceBaselineRef.current = eyeDist;
-              shoulderHeightBaselineRef.current = Math.abs(eyeHeight - shoulderHeight); // Set initial shoulder height difference
+              shoulderHeightBaselineRef.current = shoulderHeight;
               baselineSetRef.current = true; // Mark that the baseline has been set
               console.log("Baseline, distance threshold, and shoulder height threshold automatically set to:", eyeHeightBaselineRef.current, eyeDistanceBaselineRef.current, shoulderHeightBaselineRef.current);
             }
@@ -95,7 +94,7 @@ const WebcamComponent = () => {
     if (eyeHeight !== null && eyeDistance !== null && shoulderHeight !== null) {
       eyeHeightBaselineRef.current = eyeHeight;
       eyeDistanceBaselineRef.current = eyeDistance;
-      shoulderHeightBaselineRef.current = Math.abs(eyeHeight - shoulderHeight);
+      shoulderHeightBaselineRef.current = shoulderHeight;
       console.log("New baseline, distance threshold, and shoulder height threshold set:", eyeHeightBaselineRef.current, eyeDistanceBaselineRef.current, shoulderHeightBaselineRef.current);
     }
   };
@@ -107,16 +106,6 @@ const WebcamComponent = () => {
       <button onClick={handleResetBaseline}>
         Set Posture Baseline
       </button>
-      {eyeDistance !== null && eyeDistanceBaselineRef.current !== null && eyeDistance > eyeDistanceBaselineRef.current * 1.5 && (
-        <div style={{ color: 'red', fontWeight: 'bold' }}>
-          Your face is too close to the screen!
-        </div>
-      )}
-      {eyeHeight !== null && shoulderHeight !== null && shoulderHeightBaselineRef.current !== null && Math.abs(eyeHeight - shoulderHeight) < shoulderHeightBaselineRef.current * 0.75 && (
-        <div style={{ color: 'orange', fontWeight: 'bold' }}>
-          Your shoulders are shrugged!
-        </div>
-      )}
     </div>
   );
 };

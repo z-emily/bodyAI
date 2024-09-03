@@ -1,5 +1,6 @@
 // https://github.com/tensorflow/tfjs-models/blob/9b5d3b663638752b692080145cfb123fa324ff11/pose-detection/demos/live_video/src/camera.js
 import * as poseDetection from '@tensorflow-models/pose-detection';
+import { eye } from '@tensorflow/tfjs';
 
 /**
  * Draws the keypoints and skeleton on the canvas
@@ -17,9 +18,9 @@ export const drawCanvas = (
     videoWidth: any,
     videoHeight: any,
     canvas: any,
-    goodPostureBaseLine: any,
-    baselineEyeDistance: any,
-    baselineShoulderHeight: any,
+    eyeHeightBaseline: any,
+    eyeDistanceBaseline: any,
+    shoulderHeightBaseline: any,
   ) => {
     if (canvas.current == null) return;
     const ctx = canvas.current.getContext('2d');
@@ -28,10 +29,10 @@ export const drawCanvas = (
     canvas.current.height = videoHeight;
   
     if (poses[0].keypoints != null) {
-      drawKeypoints(poses[0].keypoints, ctx, goodPostureBaseLine);
-      drawGoodPostureHeight(poses[0].keypoints, ctx, goodPostureBaseLine);
-      drawShoulderShrug(poses[0].keypoints, ctx, baselineShoulderHeight);
-      drawEyeDistance(poses[0].keypoints, ctx, baselineEyeDistance);
+      drawKeypoints(poses[0].keypoints, ctx, eyeHeightBaseline, shoulderHeightBaseline, eyeDistanceBaseline);
+      drawEyeHeight(poses[0].keypoints, ctx, eyeHeightBaseline);
+      drawShoulderHeight(poses[0].keypoints, ctx, shoulderHeightBaseline);
+      drawEyeDistance(poses[0].keypoints, ctx, eyeDistanceBaseline);
     }
   };
   
@@ -43,10 +44,32 @@ export const drawCanvas = (
 export function drawKeypoints(
   keypoints: any,
   ctx: any,
-  currentGoodPostureHeight: any
+  currentEyeBaseline: any,
+  currentShoulderBaseline: any,
+  currentEyeDistanceBaseline: any,
 ) {
-  const currentPostureHeight = keypoints[2].y;
-  const delta = currentPostureHeight - currentGoodPostureHeight;
+    const leftEyeHeight = keypoints[1].y;
+    const rightEyeHeight = keypoints[2].y;
+ 
+    // Calculate average eye height
+    const currentEyeHeight = (leftEyeHeight + rightEyeHeight) / 2;
+   const eye_delta = currentEyeHeight - currentEyeBaseline;
+
+   const leftShoulderHeight = keypoints[5].y;
+    const rightShoulderHeight = keypoints[6].y;
+    
+    // Calculate average shoulder height
+    const currentShoulderHeight = (leftShoulderHeight + rightShoulderHeight) / 2;
+    const shoulder_delta = currentShoulderHeight - currentShoulderBaseline;
+
+    const leftEyeX = keypoints[1].x;
+    const rightEyeX = keypoints[2].x;
+  
+    // Calculate the current distance between the eyes
+    const currentEyeDistance = Math.abs(leftEyeX - rightEyeX);
+    const distance_delta = currentEyeDistance - currentEyeDistanceBaseline;
+
+    const delta = Math.max(Math.abs(eye_delta), Math.abs(shoulder_delta), Math.abs(distance_delta))
 
   const keypointInd = poseDetection.util.getKeypointIndexBySide(
     poseDetection.SupportedModels.MoveNet
@@ -56,7 +79,7 @@ export function drawKeypoints(
   ctx.lineWidth = 1;
 
   ctx.fillStyle = 'rgba(0, 255, 0, 0.9)'; // green if delta is positive
-  if (delta > 25 || delta < -25) {
+  if (Math.abs(delta)>25) {
     ctx.fillStyle = 'rgba(255, 0, 0, 0.9)';
   }
 
@@ -92,116 +115,111 @@ function drawKeypoint(keypoint: any, ctx: any) {
  * Draw the bounding box of good posture on the video.
  * @param keypoints A list of keypoints.
  * @param ctx current context of the canvas.
- * @param currentGoodPostureHeight current context of the canvas.
+ * @param currentEyeBaseline current context of the canvas.
  */
-export function drawGoodPostureHeight(
+export function drawEyeHeight(
   keypoints: any,
   ctx: any,
-  currentGoodPostureHeight: number
+  currentEyeBaseline: number
 ) {
-  const currentPostureHeight = keypoints[2].y;
-  const delta = currentPostureHeight - currentGoodPostureHeight;
+   const leftEyeHeight = keypoints[1].y;
+   const rightEyeHeight = keypoints[2].y;
+
+   // Calculate average eye height
+   const currentEyeHeight = (leftEyeHeight + rightEyeHeight) / 2;
+  const delta = currentEyeHeight - currentEyeBaseline;
 
   // show current good posture baseline
   ctx.strokeStyle = '#fff';
   ctx.lineWidth = 1;
 
   ctx.beginPath();
-  ctx.moveTo(0, currentGoodPostureHeight);
-  ctx.lineTo(600, currentGoodPostureHeight);
+  ctx.moveTo(0, currentEyeBaseline);
+  ctx.lineTo(600, currentEyeBaseline);
   ctx.stroke();
 
   ctx.beginPath(); // Start a new path
-  ctx.moveTo(0, currentPostureHeight); // Move the pen to (30, 50)
-  ctx.lineTo(800, currentPostureHeight); // Draw a line to (150, 100)
+  ctx.moveTo(0, currentEyeHeight); // Move the pen to (30, 50)
+  ctx.lineTo(800, currentEyeHeight); // Draw a line to (150, 100)
   ctx.stroke(); // Render the path
 
   // draw difference between current posture height and good posture height
   ctx.fillStyle = 'rgba(0, 255, 0, 0.5)'; // green if delta is positive
-  if (delta > 25 || delta < -25) {
+  if (Math.abs(delta) > 25) {
     ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
   }
 
-  ctx.fillRect(0, currentGoodPostureHeight, 800, delta);
+  ctx.fillRect(0, currentEyeBaseline, 800, delta);
 }
 
 /**
  * Draw the difference in shoulder height to detect shoulder shrugging.
  * @param keypoints A list of keypoints.
  * @param ctx current context of the canvas.
- * @param baselineShoulderHeight Difference in shoulder height considered as baseline.
+ * @param currentShoulderBaseline Difference in shoulder height considered as baseline.
  */
-export function drawShoulderShrug(
+export function drawShoulderHeight(
     keypoints: any,
     ctx: any,
-    baselineShoulderHeight: number
+    currentShoulderBaseline: number
   ) {
     const leftShoulderHeight = keypoints[5].y;
     const rightShoulderHeight = keypoints[6].y;
-    const deltaShoulderHeight = Math.abs(leftShoulderHeight - rightShoulderHeight);
+    
+    // Calculate average shoulder height
+    const currentShoulderHeight = (leftShoulderHeight + rightShoulderHeight) / 2;
+    const delta = currentShoulderHeight - currentShoulderBaseline;
   
-    // Draw line between shoulders
-    ctx.strokeStyle = '#00f'; // blue
-    ctx.lineWidth = 2;
+    // Show current shoulder baseline
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
   
     ctx.beginPath();
-    ctx.moveTo(keypoints[5].x, leftShoulderHeight);
-    ctx.lineTo(keypoints[6].x, rightShoulderHeight);
+    ctx.moveTo(0, currentShoulderBaseline);
+    ctx.lineTo(800, currentShoulderBaseline);
     ctx.stroke();
   
-    // Draw difference between shoulder heights
-    ctx.fillStyle = 'rgba(0, 255, 0, 0.5)'; // green if within baseline
-    if (deltaShoulderHeight > baselineShoulderHeight) {
-      ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'; // red if exceeds baseline
+    // Show current average shoulder height
+    ctx.beginPath(); // Start a new path
+    ctx.moveTo(0, currentShoulderHeight); // Move the pen to the shoulder height
+    ctx.lineTo(800, currentShoulderHeight); // Draw a line
+    ctx.stroke(); // Render the path
+  
+    // Draw difference between current average shoulder height and baseline
+    ctx.fillStyle = 'rgba(0, 255, 0, 0.5)'; // green if delta is positive
+    if (Math.abs(delta) > 25) {
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
     }
   
-    ctx.fillRect(
-      0,
-      Math.min(leftShoulderHeight, rightShoulderHeight),
-      800,
-      deltaShoulderHeight
-    );
-  }
+    ctx.fillRect(0, currentShoulderBaseline, 800, delta);
+  }  
 
   
   /**
  * Draw the difference in eye distance to detect if the face is too close to the screen.
  * @param keypoints A list of keypoints.
  * @param ctx current context of the canvas.
- * @param baselineEyeDistance Baseline distance between eyes.
+ * @param eyeDistanceBaseline Baseline distance between eyes.
  */
-export function drawEyeDistance(
+  export function drawEyeDistance(
     keypoints: any,
     ctx: any,
-    baselineEyeDistance: number
+    currentEyeDistanceBaseline: number
   ) {
-    const leftEye = keypoints[1];
-    const rightEye = keypoints[2];
-    const currentEyeDistance = Math.hypot(
-      rightEye.x - leftEye.x,
-      rightEye.y - leftEye.y
-    );
-    const deltaEyeDistance = currentEyeDistance - baselineEyeDistance;
+    // Assuming eye keypoints are at index 1 and 2 (typically these might be different based on the model used)
+    const leftEyeX = keypoints[1].x;
+    const rightEyeX = keypoints[2].x;
   
-    // Draw line between eyes
-    ctx.strokeStyle = '#ff0'; // yellow
+    // Calculate the current distance between the eyes
+    const currentEyeDistance = Math.abs(leftEyeX - rightEyeX);
+    const delta = currentEyeDistance - currentEyeDistanceBaseline;
+  
+    ctx.strokeStyle = Math.abs(delta) > 25 ? 'red' : 'rgba(0, 255, 0, 0.5)';
     ctx.lineWidth = 2;
-  
+
+    // Draw the line representing the eye distance
     ctx.beginPath();
-    ctx.moveTo(leftEye.x, leftEye.y);
-    ctx.lineTo(rightEye.x, rightEye.y);
-    ctx.stroke();
-  
-    // Draw eye distance difference
-    ctx.fillStyle = 'rgba(0, 255, 0, 0.5)'; // green if within baseline
-    if (Math.abs(deltaEyeDistance) > baselineEyeDistance * 0.2) { // 20% threshold
-      ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'; // red if exceeds threshold
-    }
-  
-    ctx.fillRect(
-      0,
-      Math.min(leftEye.y, rightEye.y),
-      800,
-      Math.abs(deltaEyeDistance)
-    );
+    ctx.moveTo(leftEyeX, keypoints[1].y); // Move to the left eye position
+    ctx.lineTo(rightEyeX, keypoints[2].y); // Draw a line to the right eye position
+    ctx.stroke(); 
   }  
